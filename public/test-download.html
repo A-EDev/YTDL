@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Download Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #ff0000;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    input {
+      padding: 8px;
+      width: 100%;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .log {
+      background-color: #2d2d2d;
+      color: white;
+      padding: 10px;
+      border-radius: 4px;
+      height: 200px;
+      overflow: auto;
+      font-family: monospace;
+      margin-top: 20px;
+    }
+    .success {
+      color: #4caf50;
+    }
+    .error {
+      color: #f44336;
+    }
+    .info {
+      color: #2196f3;
+    }
+    .warning {
+      color: #ff9800;
+    }
+    .progress-container {
+      width: 100%;
+      background-color: #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .progress-bar {
+      height: 20px;
+      border-radius: 4px;
+      background-color: #4caf50;
+      width: 0%;
+      transition: width 0.3s;
+      text-align: center;
+      line-height: 20px;
+      color: white;
+    }
+    .methods-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>YouTube Download Tester</h1>
+  <p>This page tests the download functionality directly without going through the React app. Use this to isolate and diagnose download issues.</p>
+  
+  <div class="container">
+    <h2>Test Download</h2>
+    <input type="text" id="urlInput" placeholder="Enter YouTube URL" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+    
+    <button onclick="checkUrl()">Check URL</button>
+    
+    <div class="progress-container" id="progressContainer" style="display:none;">
+      <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <h3>Video Downloads</h3>
+    <div class="methods-grid">
+      <button onclick="startDownload('mp4', '360p')">MP4 360p</button>
+      <button onclick="startDownload('mp4', '480p')">MP4 480p</button>
+      <button onclick="startDownload('mp4', '720p')">MP4 720p</button>
+      <button onclick="startDownload('mp4', '1080p')">MP4 1080p</button>
+    </div>
+    
+    <h3>Audio Downloads</h3>
+    <div class="methods-grid">
+      <button onclick="startDownload('mp3', '128')">MP3 128kbps</button>
+      <button onclick="startDownload('mp3', '256')">MP3 256kbps</button>
+    </div>
+    
+    <h3>Alternative Methods</h3>
+    <div class="methods-grid">
+      <button onclick="getDirectLink()">Get Direct Link</button>
+      <button onclick="proxyDownload()">Proxy Download</button>
+      <button onclick="testServerConnection()">Test Server</button>
+      <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    // Log function with timestamps and styling
+    function log(message, type = 'normal') {
+      const logEl = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const typeClass = type === 'error' ? 'error' : 
+                        type === 'success' ? 'success' : 
+                        type === 'info' ? 'info' :
+                        type === 'warning' ? 'warning' : '';
+      
+      logEl.innerHTML += `<div class="${typeClass}">[${timestamp}] ${message}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    // Clear the log
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      log('Log cleared', 'info');
+    }
+    
+    // Check URL validity first
+    async function checkUrl() {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        log('Please enter a YouTube URL', 'error');
+        return;
+      }
+      
+      log(`Checking URL: ${url}`, 'info');
+      
+      try {
+        // Try to get video info
+        const response = await fetch(`/api/video/info?url=${encodeURIComponent(url)}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          log(`✅ Valid video found: "${data.title}" by ${data.author}`, 'success');
+          log(`Available formats: ${data.formats.map(f => f.label).join(', ')}`, 'info');
+          return true;
+        } else {
+          const errorData = await response.json();
+          log(`❌ Error checking URL: ${errorData.error}`, 'error');
+          return false;
+        }
+      } catch (error) {
+        log(`❌ Error checking URL: ${error.message}`, 'error');
+        return false;
+      }
+    }
+    
+    // Start download with progress tracking
+    function startDownload(format, quality) {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        log('Please enter a YouTube URL', 'error');
+        return;
+      }
+      
+      log(`Starting ${format.toUpperCase()} ${quality} download...`, 'info');
+      
+      // Create the download URL
+      const downloadUrl = `/api/video/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}`;
+      log(`Download URL: ${downloadUrl}`, 'info');
+      
+      // Show progress (simulated since we can't track real progress)
+      simulateProgress();
+      
+      // METHOD 1: Direct link approach
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = `youtube-download.${format}`;
+      downloadLink.style.display = 'none';
+      document.body.appendChild(downloadLink);
+      
+      log('Using direct link download method...', 'info');
+      downloadLink.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(downloadLink);
+      }, 1000);
+      
+      // METHOD 2: After a delay, try the form submit method
+      setTimeout(() => {
+        log('Using form submission method as backup...', 'info');
+        
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = downloadUrl;
+        form.target = '_blank';
+        document.body.appendChild(form);
+        form.submit();
+        
+        setTimeout(() => {
+          document.body.removeChild(form);
+        }, 1000);
+      }, 2000);
+    }
+    
+    // Simulate progress
+    function simulateProgress() {
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressBar.textContent = '0%';
+      
+      let width = 0;
+      const interval = setInterval(() => {
+        if (width >= 90) {
+          // Stop at 90% since we don't know when it will complete
+          clearInterval(interval);
+          
+          // After a delay, assume it completed or failed
+          setTimeout(() => {
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            log('Download should have started. Check your downloads folder.', 'info');
+            
+            // Hide progress after a while
+            setTimeout(() => {
+              progressContainer.style.display = 'none';
+            }, 3000);
+          }, 5000);
+        } else {
+          // Progress slower as we get closer to 90%
+          const increment = Math.max(1, 10 - Math.floor(width / 10));
+          width += increment;
+          progressBar.style.width = width + '%';
+          progressBar.textContent = width + '%';
+        }
+      }, 500);
+    }
+    
+    // Get direct link
+    async function getDirectLink() {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        log('Please enter a YouTube URL', 'error');
+        return;
+      }
+      
+      log('Getting direct download link...', 'info');
+      
+      try {
+        const format = 'mp4';
+        const quality = '360p';
+        const apiUrl = `/api/video/direct-download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}`;
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Check if we have all the necessary data
+        if (!data || !data.url) {
+          log('Received incomplete data from server. Response data:', 'error');
+          log(JSON.stringify(data, null, 2), 'info');
+          throw new Error('Server returned invalid data structure');
+        }
+        
+        log(`Direct link obtained: ${data.title || 'Untitled'}.${data.format || 'mp4'}`, 'success');
+        log(`URL: ${data.url.substring(0, 50)}...`, 'info');
+        
+        // Create a button to download directly
+        const btn = document.createElement('button');
+        btn.textContent = 'Use Direct Link';
+        btn.onclick = () => {
+          window.open(data.url, '_blank');
+          log('Opened direct link in new tab', 'info');
+        };
+        
+        document.getElementById('log').appendChild(document.createElement('br'));
+        document.getElementById('log').appendChild(btn);
+      } catch (error) {
+        log(`Error getting direct link: ${error.message}`, 'error');
+      }
+    }
+    
+    // Proxy download
+    function proxyDownload() {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        log('Please enter a YouTube URL', 'error');
+        return;
+      }
+      
+      log('Starting proxy download process...', 'info');
+      
+      // First get the direct URL
+      fetch(`/api/video/direct-download?url=${encodeURIComponent(url)}&format=mp4&quality=360p`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (!data || !data.url) {
+            log('Received incomplete data from server:', 'error');
+            log(JSON.stringify(data, null, 2), 'info');
+            throw new Error('Server returned invalid data structure');
+          }
+          
+          log(`Got direct URL for: ${data.title || 'Untitled'}`, 'success');
+          
+          // Then use our proxy to download it
+          const proxyUrl = `/api/video/proxy-download?url=${encodeURIComponent(data.url)}`;
+          log(`Proxying through: ${proxyUrl}`, 'info');
+          
+          window.open(proxyUrl, '_blank');
+          log('Proxy download initiated in new tab', 'success');
+        })
+        .catch(error => {
+          log(`Error: ${error.message}`, 'error');
+        });
+    }
+    
+    // Test server connection
+    async function testServerConnection() {
+      log('Testing server connection...', 'info');
+      
+      try {
+        const response = await fetch('/api/health');
+        if (response.ok) {
+          const data = await response.json();
+          log(`Server is up and running! Status: ${data.status}, Version: ${data.version}`, 'success');
+          return true;
+        } else {
+          log(`Server returned error: ${response.status} ${response.statusText}`, 'error');
+          return false;
+        }
+      } catch (error) {
+        log(`Cannot connect to server: ${error.message}`, 'error');
+        log('Make sure your server is running on port 5000', 'warning');
+        return false;
+      }
+    }
+    
+    // Run server test automatically when page loads
+    window.addEventListener('load', () => {
+      log('Page loaded. Testing server connection...', 'info');
+      testServerConnection();
+    });
+  </script>
+</body>
+</html>
