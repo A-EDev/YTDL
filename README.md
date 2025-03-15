@@ -1,18 +1,25 @@
 # YT Premium - YouTube Downloader
 
-A premium YouTube downloader application built with React and Python.
+![Development Status](https://img.shields.io/badge/Status-Under%20Development-yellow)
+![Version](https://img.shields.io/badge/Version-0.2.0%20(Alpha)-blue)
 
-## Features
+A premium YouTube downloader application built with React and Python, designed to provide a seamless downloading experience with cutting-edge technology.
 
-- Download YouTube videos in various formats and qualities
-- Convert to MP3 audio
-- Beautiful, responsive UI
-- Premium subscription options
-- Reliable Python backend using yt-dlp
+> **⚠️ IMPORTANT: This application is currently under active development and not fully functional yet. Some features may be unstable or incomplete. Use at your own risk.**
 
-## Installation
+## ✨ Premium Features
 
-### Option 1: Node.js Backend (Original)
+- 📱 Modern, responsive UI built with Material UI
+- 🎬 Download YouTube videos in various formats and qualities
+- 🎵 Convert YouTube videos to high-quality MP3 audio
+- 🚀 Dual-backend architecture for maximum reliability:
+  - Python backend using pytube (most reliable)
+  - Node.js backend using ytdl-core (fastest)
+- 🛠️ Automatic fallback mechanisms when primary download methods fail
+
+## 🚀 Installation
+
+### Option 1: Node.js Backend
 
 1. Clone this repository
 2. Install dependencies:
@@ -43,7 +50,7 @@ python setup.py
 npm run dev-python
 ```
 
-## Building for Production
+## 🛠️ Building for Production
 
 ```bash
 npm run build
@@ -56,14 +63,22 @@ cd python_backend
 python app.py
 ```
 
-## Technologies Used
+## 🔧 Technologies Used
 
-- React.js
-- Material-UI
-- Python Flask API
-- yt-dlp (Most reliable YouTube downloader)
+- **Frontend**: React.js, Material-UI, React-Toastify
+- **Backend**: Python Flask API, Node.js Express
+- **Download Engines**: pytube, yt-dlp, ytdl-core
 
-## Troubleshooting
+## ⚠️ Development Status
+
+This project is in **ALPHA** stage. Currently working on:
+
+- Improving download reliability
+- Adding support for more formats
+- Implementing playlist downloads
+- Creating premium subscription features
+
+## 🔍 Troubleshooting
 
 If downloads don't work:
 1. Try using the Python backend (more reliable)
@@ -71,6 +86,10 @@ If downloads don't work:
 3. Try a different video (some videos might be restricted)
 4. Check the server console for errors
 
-## Note on YouTube Downloads
+## 📝 Legal Notice
 
 This application is for personal use only. Downloading copyrighted content without permission may violate YouTube's terms of service and copyright laws in some countries.
+
+## 📞 Contact
+
+For bug reports or feature requests, please open an issue on our GitHub repository.
